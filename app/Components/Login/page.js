@@ -1,38 +1,66 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation"; // <-- Import useRouter
+import { useState, useEffect, use } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function AuthForm() {
-  const [isLogin, setIsLogin] = useState(true);
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+  const [isLogin, setIsLogin] = useState(mode === "login" ? true : true);
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  const router = useRouter(); // <-- Initialize router
+
+  useEffect(() => {
+    if (mode === "login") {
+      setIsLogin(true);
+    }
+  }, [mode]);
+
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const url = isLogin
-      ? "/api/auth/Login"
-      : "/api/auth/Register";
+      ? "/api/auth/login"
+      : "/api/auth/register";
 
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          name: form.name
+        }),
+        headers: { 'Content-Type': 'application/json' }
       });
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (!isLogin && res.ok) {
+
+        setIsLogin(true);
+        setForm({ name: "", email: "", password: "" });
+        // After successful registration, switch to login mode
+        router.push("/Auth/login");
+      }
+
+      if (isLogin && res.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify({
+          name: data.name, email: data.email,
+          role: data.role
+        }));
         setForm({ name: "", email: "", password: "" });
 
-        if (isLogin) {
-          router.push("/dashboard"); // <-- Redirect after login
+        if (data.role === 'admin') {
+          router.push("/admin/dashboard")
+        } else {
+          router.push("/user/dashboard")
         }
       } else {
         console.log(data.error || "Something went wrong");

@@ -1,12 +1,14 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import Link from "next/link";
+
 
 
 const Header = () => {
   const [showHeader, setShowHeader] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showMegaMenu, setShowMegaMenu] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Placeholder for auth state
 
   const menu = [
     { label: "Home", path: "/" },
@@ -57,6 +59,12 @@ const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
 
   return (
     <header className="fixed top-15 left-0 w-full z-50">
@@ -154,12 +162,12 @@ const Header = () => {
 
         <div className="flex gap-4">
           <Link
-            href="/Components/Login"
+            href="/Auth/login"
             className="bg-gradient-to-r from-slate-100 to-slate-900 px-5 py-3 rounded-xl inline-block text-center"
           >
             <span className="text-slate-800">Login</span> / <span className="text-slate-200">Signup</span>
           </Link>
-       
+
 
 
         </div>

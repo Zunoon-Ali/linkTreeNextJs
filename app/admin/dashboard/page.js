@@ -1,12 +1,23 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+"use client";
+import { useEffect, useState } from "react";
 
-export default async function AdminDashboard() {
-  const session = await getServerSession(authOptions);
+export default function UserDashboard() {
+  const [user, setUser] = useState(null);
 
-  if (!session || session.user.role !== "admin") {
-    return <p>Access Denied</p>; // or redirect to login
-  }
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
-  return <h1>Welcome Admin</h1>;
+  if (!user) return <p>Loading...</p>;
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold">Welcome, {user.name}</h1>
+      <p className="text-gray-600">Email: {user.email}</p>
+      <p className="text-sm mt-2">Role: {user.role}</p>
+    </div>
+  );
 }
