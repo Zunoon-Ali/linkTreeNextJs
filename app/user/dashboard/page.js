@@ -1,17 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 export default function UserDashboard() {
-  const [user, setUser] = useState(null);
+  const { data: session, status } = useSession();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  if (status === "loading") return <p>Loading...</p>;
+  if (!session?.user) return <p>Please log in.</p>;
 
-  if (!user) return <p>Loading...</p>;
+  // Use session.user data
+  const { user } = session;
 
   return (
     <div>

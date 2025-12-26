@@ -1,145 +1,123 @@
 "use client";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function AuthForm() {
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
-  const [isLogin, setIsLogin] = useState(mode === "login" ? true : true);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
 
+  const [isLogin, setIsLogin] = useState(mode === "login");
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    if (mode === "login") {
-      setIsLogin(true);
-    }
+    setIsLogin(mode === "login");
   }, [mode]);
-
-  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const url = isLogin
-      ? "/api/auth/login"
-      : "/api/auth/register";
-
-    try {
-      const res = await fetch(url, {
+    if (!isLogin) {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-          name: form.name
-        }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
-
       const data = await res.json();
+      setLoading(false);
 
-      if (!isLogin && res.ok) {
-
-        setIsLogin(true);
-        setForm({ name: "", email: "", password: "" });
-        // After successful registration, switch to login mode
-        router.push("/Auth/login");
+      if (!res.ok) {
+        setError(data.error || "Registration Failed");
+        return;
       }
-
-      if (isLogin && res.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify({
-          name: data.name, email: data.email,
-          role: data.role
-        }));
-        setForm({ name: "", email: "", password: "" });
-
-        if (data.role === 'admin') {
-          router.push("/admin/dashboard")
-        } else {
-          router.push("/user/dashboard")
-        }
-      } else {
-        console.log(data.error || "Something went wrong");
-      }
-
-      console.log(data);
-    } catch (err) {
-      console.error("Network error:", err);
+      router.push("/Auth/login?mode=login");
+      return;
     }
+
+    // Login with NextAuth
+    const res = await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (res?.error) {
+      setError("Invalid Email or Password");
+      return;
+    }
+
+    router.push("/dashboard");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
         <h2 className="text-2xl font-bold text-center mb-6">
-          {isLogin ? "Welcome back" : "Create an account"}
+          {isLogin ? "Welcome Back" : "Create an Account"}
         </h2>
+
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
-              <input
-                type="text"
-                placeholder="Your name"
-                value={form.name}
-                onChange={(e) =>
-                  setForm({ ...form, name: e.target.value })
-                }
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-black"
-                required
-              />
-            </div>
+            <input
+              type="text"
+              placeholder="Your Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full px-4 py-3 border rounded-lg"
+              required
+            />
           )}
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={(e) =>
-                setForm({ ...form, email: e.target.value })
-              }
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-black"
-              required
-            />
-          </div>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="w-full px-4 py-3 border rounded-lg"
+            required
+          />
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-black"
-              required
-            />
-          </div>
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            className="w-full px-4 py-3 border rounded-lg"
+            required
+          />
 
           <button
             type="submit"
-            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
+            disabled={loading}
+            className="w-full bg-black text-white py-3 rounded-lg"
           >
-            {isLogin ? "Login" : "Register"}
+            {loading ? "Please wait..." : isLogin ? "Login" : "Register"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          {isLogin ? "Don’t have an account?" : "Already have an account?"}
+        <p className="text-center mt-6">
+          {isLogin ? "Don't have an account?" : "Already have an account?"}
           <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="ml-1 font-semibold text-black hover:underline"
+            onClick={() =>
+              router.push(
+                isLogin
+                  ? "/Auth/login?mode=register"
+                  : "/Auth/login?mode=login"
+              )
+            }
+            className="ml-1 text-black font-semibold hover:underline"
           >
-            {isLogin ? "Sign up" : "Login"}
+            {isLogin ? "Sign Up" : "Login"}
           </button>
         </p>
       </div>

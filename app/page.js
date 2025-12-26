@@ -1,14 +1,11 @@
-import Image from "next/image";
-import HomePage from "@/app/Components/Home/page";
-import Header from "../app/Partials/Header/Header"
-function Home() {
+import Header from "../app/Partials/Header/Header";
+import HomePage from "./Components/Home/page";
+
+export default function Home() {
   return (
     <>
-        <Header />
-
+      <Header />
       <HomePage />
-
     </>
   );
 }
-export default Home;

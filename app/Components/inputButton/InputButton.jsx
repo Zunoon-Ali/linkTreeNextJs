@@ -8,11 +8,11 @@ const InputButton = ({
   ButtonPadding,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 items-stretch">
+    <div className="flex flex-col sm:flex-row gap-4 md:gap-1 items-stretch">
       <input
         type="text"
         placeholder="link./tree"
-        className="py-4 px-6 rounded-xl bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-600 w-full"
+        className="py-4 px-6 rounded-xl bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-600 md:w-[60%] w-full"
       />
 
       <a

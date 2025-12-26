@@ -1,6 +1,7 @@
-import React from 'react'
+"use client"
 import LoginForm from '@/app/Components/Login/page';
 import { Section } from 'lucide-react';
+
 
 const Login = () => {
   return (

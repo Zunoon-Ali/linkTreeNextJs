@@ -1,33 +1,43 @@
-import React, { cache } from 'react'
-import Hero from '../Home/Hero/Hero'
-import About from '../Home/About/About'
-import Emilio from '../Home/Emilio/Emilio'
-import Feature from '../Home/Feature/Feature'
-import Trusted from '../Home/Trusted/Trusted'
-import Jumpstart from '../Home/Jumpstart/JumpStart'
-import Faq from '../Home/Faq/Faq'
+// NO "use client"
+import Hero from './Hero/Hero';
+import About from './About/About';
+import Emilio from './Emilio/Emilio';
+import Feature from './Feature/Feature';
+import Trusted from './Trusted/Trusted';
+import Jumpstart from './JumpStart/JumpStart';
+import Faq from './Faq/Faq';
+
+import connectDB from "@/app/lib/db";
+import HomePageModel from "@/app/models/HomePage";
 
 async function getHomePageData() {
-  const res = await fetch(`${process.env.NEXT_BASE_PUBLIC_URL}/api/HomePage`, {
-    cache: 'no-store'
-  })
-  return res.json()
+  try {
+    await connectDB();
+    const data = await HomePageModel.findOne().lean();
+    if (!data) return null;
+    // Serialize to ensure it's simple JSON (removes ObjectIds etc)
+    return JSON.parse(JSON.stringify(data));
+  } catch (error) {
+    console.error("Error fetching home page data:", error);
+    return null;
+  }
 }
-const HomePage = async () => {
-  const data = await getHomePageData()
+
+export default async function HomePage() {
+  const data = await getHomePageData() || {}; // Fallback to empty object if null
+
+
+  if (!data) return null;
+
   return (
     <>
       <Hero data={data.hero} />
-      <About data={data} />
-      <Emilio data={data} />
-      <Feature data={data} />
-      <Trusted data={data} />
-      <Faq data={data} />
-      <Jumpstart data={data} />
-
-
+      <About data={data.about} />
+      <Emilio data={data.emilio} />
+      <Feature data={data.features} />
+      <Trusted data={data.trusted} />
+      <Faq data={data.faqs} />
+      <Jumpstart data={data.jumpStart} />
     </>
-  )
+  );
 }
-
-export default HomePage
